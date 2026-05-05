@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vita Wallet - En Mantenimiento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(309deg, rgb(1, 22, 123), rgb(31, 255, 218));
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .card {
+            background: white; border-radius: 24px; padding: 48px 40px;
+            max-width: 500px; width: 90%; text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .icon { font-size: 64px; margin-bottom: 24px; }
+        h1 { font-size: 28px; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; }
+        p { font-size: 16px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+        .bar { background: #f0f7ff; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+        .bar-label { font-size: 12px; color: #8a8f9e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .progress { background: #e0e0e0; border-radius: 8px; height: 8px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #005FEE, #00ffff); height: 100%; width: 65%; border-radius: 8px; animation: progressPulse 3s infinite; }
+        @keyframes progressPulse { 0%,100%{width:60%} 50%{width:75%} }
+        .eta { font-size: 13px; color: #005FEE; margin-top: 8px; font-weight: 500; }
+        .contact { font-size: 14px; color: #999; }
+        .contact a { color: #005FEE; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <img src="https://api.vitawallet.io/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NDAzMjc2LCJwdXIiOiJibG9iX2lkIn19--de7c38283d0595571ac5d966d8d975e9e86e5e38/Logos%20(1).png" alt="Vita Wallet" style="width:140px;margin-bottom:24px;" onerror="this.style.display='none'">
+    <div class="icon">🔧</div>
+    <h1>Estamos en mantenimiento</h1>
+    <p>Estamos realizando mejoras en nuestros sistemas para ofrecerte una experiencia aún mejor. ¡Volveremos pronto!</p>
+    <div class="bar">
+        <div class="bar-label">Progreso del mantenimiento</div>
+        <div class="progress"><div class="progress-fill"></div></div>
+        <div class="eta">⏳ Tiempo estimado: 2 horas</div>
+    </div>
+    <div class="contact">
+        <p>Para dudas urgentes: <a href="mailto:soporte@vitawallet.io">soporte@vitawallet.io</a></p>
+    </div>
+</div>
+</body>
+</html>
